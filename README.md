@@ -10,7 +10,7 @@ Make sure you have configured wakatime API key in your [~/.wakatime.cfg](https:/
 
 1. Run `./install_cli.sh` to install the [WakaTime CLI](https://github.com/wakatime/wakatime-cli).
 
-2. For bash users:
+2. For bash users (bash >= 5):
   - git clone https://github.com/irondoge/bash-wakatime.git
 
   - include the "bash-wakatime.sh" file in your "~/.bashrc" file with this command:
@@ -21,10 +21,44 @@ Make sure you have configured wakatime API key in your [~/.wakatime.cfg](https:/
 
     `source path/to/bash-wakatime.sh`
 
-  - But if you already have a PROMPT_COMMAND variable set,
-    just merge your own pre_prompt_command with the following one.
-    And don't forget to create and configure your "~/.wakatime.cfg" file.
+  - It must be sourced: running the file as a program only hooks a child shell
+    that exits right away, so the script refuses to run that way.
 
 3. Open a new terminal and type commands
 
-4. Visit https://wakatime.com/project/Terminal
+4. Visit https://wakatime.com/dashboard
+
+How it works
+------------
+
+- A heartbeat is sent when a command starts. The program name is the entity
+  (`--entity-type app`), never the full command line, so arguments and secrets
+  stay local.
+- While a command keeps the terminal (builds, `ssh`, `vim`, serial consoles),
+  a heartbeat is sent every `WAKATIME_BASH_INTERVAL` seconds, billed to the
+  process that holds the terminal at that moment (`cd x && make` counts as
+  `make`). Long commands are no longer lost to the WakaTime timeout.
+- Those heartbeats stop once the terminal has had no keyboard input for
+  `WAKATIME_BASH_IDLE` seconds, read from the tty atime (the same source `w`
+  uses for IDLE), so an idle `ssh` or `htop` left open overnight is not billed.
+- Project is the git toplevel name with its branch, or `Terminal` outside a repo.
+- Category is guessed from the command: `make`, `cargo build`, `npm run build`,
+  `pio run`... are `building`; `make test`, `pytest`, `cargo test`... are
+  `running tests`; `gdb`, `strace`, `valgrind`, `openocd`... are `debugging`;
+  everything else is `coding`. Edit `__wt_category` to change the mapping.
+- Hooks: `PS0` flags a non-empty command line, a self-disarming `DEBUG` trap
+  catches its first simple command (preexec), and `PROMPT_COMMAND` stops the
+  keepalive and re-arms the trap (precmd). It refuses to install over a
+  `DEBUG` trap set by another tool, such as bash-preexec.
+
+Configuration
+-------------
+
+Set these before sourcing the script:
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `WAKATIME_CLI` | `~/.wakatime/wakatime-cli` | wakatime-cli binary |
+| `WAKATIME_BASH_INTERVAL` | `120` | seconds between heartbeats of a running command |
+| `WAKATIME_BASH_IDLE` | `900` | stop billing a running command after this long without keyboard input |
+| `WAKATIME_BASH_IGNORE` | `claude` | space-separated programs that already have their own WakaTime plugin (add `vim` if you use vim-wakatime) |
