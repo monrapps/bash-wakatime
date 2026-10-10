@@ -1,0 +1,99 @@
+{
+  "$schema": "https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/main/themes/schema.json",
+  "version": 4,
+  "final_space": true,
+  "console_title_template": "{{ .Folder }}",
+  "upgrade": {
+    "auto": false,
+    "notice": false
+  },
+  "palette": {
+    "green": "#00ff41",
+    "mid": "#00cc33",
+    "soft": "#b0ffb0",
+    "muted": "#4a7a4a",
+    "red": "#ff3333",
+    "warn": "#ffaa00"
+  },
+  "blocks": [
+    {
+      "type": "prompt",
+      "alignment": "left",
+      "segments": [
+        {
+          "type": "session",
+          "style": "plain",
+          "foreground": "p:muted",
+          "template": "{{ if .SSHSession }}{{ .UserName }}@{{ .HostName }} {{ end }}"
+        },
+        {
+          "type": "path",
+          "style": "plain",
+          "foreground": "p:green",
+          "options": {
+            "style": "agnoster_short",
+            "max_depth": 4,
+            "home_icon": "~"
+          },
+          "template": "{{ .Path }}"
+        },
+        {
+          "type": "git",
+          "style": "plain",
+          "foreground": "p:mid",
+          "foreground_templates": [
+            "{{ if or .Working.Changed .Staging.Changed }}p:warn{{ end }}"
+          ],
+          "options": {
+            "branch_icon": " "
+          },
+          "template": " {{ .HEAD }}{{ if or .Working.Changed .Staging.Changed }} *{{ end }}{{ if gt .Ahead 0 }} ↑{{ .Ahead }}{{ end }}{{ if gt .Behind 0 }} ↓{{ .Behind }}{{ end }}"
+        }
+      ]
+    },
+    {
+      "type": "prompt",
+      "alignment": "right",
+      "segments": [
+        {
+          "type": "status",
+          "style": "plain",
+          "foreground": "p:red",
+          "template": "{{ if .Error }} {{ .String }} {{ end }}"
+        },
+        {
+          "type": "executiontime",
+          "style": "plain",
+          "foreground": "p:muted",
+          "options": {
+            "threshold": 2000,
+            "style": "austin"
+          },
+          "template": " {{ .FormattedMs }} "
+        },
+        {
+          "type": "text",
+          "style": "plain",
+          "foreground": "p:green",
+          "template": "{{ if .Env.WAKATIME_TODAY }} {{ .Env.WAKATIME_TODAY }}{{ if .Env.WAKATIME_TODAY_BASH }} <p:muted> {{ .Env.WAKATIME_TODAY_BASH }}</>{{ end }}{{ end }}"
+        }
+      ]
+    },
+    {
+      "type": "prompt",
+      "alignment": "left",
+      "newline": true,
+      "segments": [
+        {
+          "type": "text",
+          "style": "plain",
+          "foreground": "p:green",
+          "foreground_templates": [
+            "{{ if gt .Code 0 }}p:red{{ end }}"
+          ],
+          "template": "❯"
+        }
+      ]
+    }
+  ]
+}

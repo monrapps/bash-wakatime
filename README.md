@@ -79,8 +79,21 @@ The prompt never waits on the network, and the API key is read from
 `~/.wakatime.cfg` (`api_url` is honored) and passed to curl through stdin,
 never on its command line.
 
+`themes/matrix.omp.json` is an [oh-my-posh](https://ohmyposh.dev) theme that
+shows both values (it needs a Nerd Font). Init oh-my-posh before this script:
+
+```bash
+eval "$(oh-my-posh init bash --config path/to/bash-wakatime/themes/matrix.omp.json)"
+WAKATIME_BASH_TODAY=300
+source path/to/bash-wakatime/bash-wakatime.sh
+```
+
 Any other prompt can use the variables too, e.g.
 `PS1='${WAKATIME_TODAY:+[$WAKATIME_TODAY] }\w \$ '`.
+
+oh-my-posh's built-in `wakatime` segment works as well, but bash has no
+streaming mode, so every cache miss blocks the prompt for the whole API
+round trip (about a second).
 
 Compatibility with prompt frameworks: the hook re-appends its `PS0` flag on
 every prompt (oh-my-posh assigns `PS0` when it initializes), and saves the
