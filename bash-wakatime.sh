@@ -21,10 +21,10 @@ fi
 [[ $- == *i* ]] || return 0
 
 : "${WAKATIME_CLI:=$HOME/.wakatime/wakatime-cli}"
-: "${WAKATIME_BASH_INTERVAL:=120}"  # seconds between heartbeats of a running command
-: "${WAKATIME_BASH_IDLE:=900}"      # stop counting after this long without keyboard input
-: "${WAKATIME_BASH_IGNORE:=claude}" # programs already tracked by their own WakaTime plugin
-: "${WAKATIME_BASH_TODAY:=0}"       # refresh $WAKATIME_TODAY for prompt themes every N seconds, 0 disables
+: "${WAKATIME_BASH_INTERVAL:=120}"        # seconds between heartbeats of a running command
+: "${WAKATIME_BASH_IDLE:=900}"            # stop counting after this long without keyboard input
+: "${WAKATIME_BASH_IGNORE:=claude codex}" # programs already tracked by their own WakaTime plugin
+: "${WAKATIME_BASH_TODAY:=0}"             # refresh $WAKATIME_TODAY for prompt themes every N seconds, 0 disables
 
 if (( BASH_VERSINFO[0] < 5 )); then
     echo "bash-wakatime: bash >= 5 required, found $BASH_VERSION" >&2

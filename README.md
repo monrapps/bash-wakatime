@@ -61,7 +61,7 @@ Set these before sourcing the script:
 | `WAKATIME_CLI` | `~/.wakatime/wakatime-cli` | wakatime-cli binary |
 | `WAKATIME_BASH_INTERVAL` | `120` | seconds between heartbeats of a running command |
 | `WAKATIME_BASH_IDLE` | `900` | stop billing a running command after this long without keyboard input |
-| `WAKATIME_BASH_IGNORE` | `claude` | space-separated programs that already have their own WakaTime plugin (add `vim` if you use vim-wakatime) |
+| `WAKATIME_BASH_IGNORE` | `claude codex` | space-separated programs that already have their own WakaTime plugin, [Claude Code](https://wakatime.com/claude-code) and [Codex CLI](https://wakatime.com/codex) by default (add `vim` if you use vim-wakatime) |
 | `WAKATIME_BASH_TODAY` | `0` | refresh today's totals for the prompt every this many seconds, `0` disables (needs `curl`, `jq` and `flock`) |
 
 Today's time in the prompt
