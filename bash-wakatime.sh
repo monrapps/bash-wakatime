@@ -44,6 +44,9 @@ __wt_version="2.0.0"
 # the trap disarms itself inline (doing it inside __wt_preexec doesn't stick for the running
 # command) and __wt_precmd re-arms it, so loops typed at the prompt don't pay for it
 __wt_debug='(( __wt_pending )) && { trap - DEBUG; __wt_preexec; }'
+# PS0 is expanded only for non-empty command lines, right before they run; the
+# arithmetic inside the substring offset sets the flag in this shell, no subshell
+__wt_ps0='${PS0:0:$((__wt_pending=1,0))}'
 __wt_shell=$$
 __wt_pending=0
 __wt_last_key=
@@ -147,17 +150,19 @@ __wt_preexec() {
 }
 
 __wt_precmd() {
-    local s=$?
+    local s=$? pipestatus=("${PIPESTATUS[@]}")
+    # prompts that run after this hook (oh-my-posh, bash-preexec aware ones) read the user's pipeline status here
+    BP_PIPESTATUS=("${pipestatus[@]}")
     if [[ -n $__wt_ka_pid ]]; then
         kill "$__wt_ka_pid" 2>/dev/null
         __wt_ka_pid=
     fi
+    # prompt frameworks such as oh-my-posh assign PS0 when they init, dropping the flag
+    [[ $PS0 == *__wt_pending* ]] || PS0+=$__wt_ps0
     trap "$__wt_debug" DEBUG
     return $s
 }
 
-# PS0 is expanded only for non-empty command lines, right before they run; the
-# arithmetic inside the substring offset sets the flag in this shell, no subshell
-[[ $PS0 == *__wt_pending* ]] || PS0+='${PS0:0:$((__wt_pending=1,0))}'
-[[ $PROMPT_COMMAND == *__wt_precmd* ]] || PROMPT_COMMAND="__wt_precmd"${PROMPT_COMMAND:+$'\n'$PROMPT_COMMAND}
+[[ $PS0 == *__wt_pending* ]] || PS0+=$__wt_ps0
+[[ ${PROMPT_COMMAND[*]} == *__wt_precmd* ]] || PROMPT_COMMAND="__wt_precmd"${PROMPT_COMMAND:+$'\n'$PROMPT_COMMAND}
 trap "$__wt_debug" DEBUG

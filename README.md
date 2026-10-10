@@ -62,3 +62,8 @@ Set these before sourcing the script:
 | `WAKATIME_BASH_INTERVAL` | `120` | seconds between heartbeats of a running command |
 | `WAKATIME_BASH_IDLE` | `900` | stop billing a running command after this long without keyboard input |
 | `WAKATIME_BASH_IGNORE` | `claude` | space-separated programs that already have their own WakaTime plugin (add `vim` if you use vim-wakatime) |
+
+Compatibility with prompt frameworks: the hook re-appends its `PS0` flag on
+every prompt (oh-my-posh assigns `PS0` when it initializes), and saves the
+user's `PIPESTATUS` in `BP_PIPESTATUS`, which oh-my-posh reads, so its status
+segment still sees the real pipeline status even though this hook runs first.
