@@ -62,6 +62,25 @@ Set these before sourcing the script:
 | `WAKATIME_BASH_INTERVAL` | `120` | seconds between heartbeats of a running command |
 | `WAKATIME_BASH_IDLE` | `900` | stop billing a running command after this long without keyboard input |
 | `WAKATIME_BASH_IGNORE` | `claude` | space-separated programs that already have their own WakaTime plugin (add `vim` if you use vim-wakatime) |
+| `WAKATIME_BASH_TODAY` | `0` | refresh today's totals for the prompt every this many seconds, `0` disables (needs `curl`, `jq` and `flock`) |
+
+Today's time in the prompt
+--------------------------
+
+With `WAKATIME_BASH_TODAY` set, a detached job fetches today's
+[summaries](https://wakatime.com/developers#summaries) at most once per
+interval across all open shells (`flock` plus the cache file mtime), and each
+prompt reads the cache with no fork and exports:
+
+- `WAKATIME_TODAY`: today's total across every editor, e.g. `2h05m`
+- `WAKATIME_TODAY_BASH`: the part of it tracked by this plugin, e.g. `41m`
+
+The prompt never waits on the network, and the API key is read from
+`~/.wakatime.cfg` (`api_url` is honored) and passed to curl through stdin,
+never on its command line.
+
+Any other prompt can use the variables too, e.g.
+`PS1='${WAKATIME_TODAY:+[$WAKATIME_TODAY] }\w \$ '`.
 
 Compatibility with prompt frameworks: the hook re-appends its `PS0` flag on
 every prompt (oh-my-posh assigns `PS0` when it initializes), and saves the

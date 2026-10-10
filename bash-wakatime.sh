@@ -24,6 +24,7 @@ fi
 : "${WAKATIME_BASH_INTERVAL:=120}"  # seconds between heartbeats of a running command
 : "${WAKATIME_BASH_IDLE:=900}"      # stop counting after this long without keyboard input
 : "${WAKATIME_BASH_IGNORE:=claude}" # programs already tracked by their own WakaTime plugin
+: "${WAKATIME_BASH_TODAY:=0}"       # refresh $WAKATIME_TODAY for prompt themes every N seconds, 0 disables
 
 if (( BASH_VERSINFO[0] < 5 )); then
     echo "bash-wakatime: bash >= 5 required, found $BASH_VERSION" >&2
@@ -38,6 +39,10 @@ if [[ -n $__wt_trap && $__wt_trap != *__wt_preexec* ]]; then
     echo "bash-wakatime: a DEBUG trap is already set ($__wt_trap), not installing" >&2
     return 1
 fi
+if (( WAKATIME_BASH_TODAY > 0 )) && ! type -P curl jq flock >/dev/null; then
+    echo "bash-wakatime: WAKATIME_BASH_TODAY needs curl, jq and flock, disabling it" >&2
+    WAKATIME_BASH_TODAY=0
+fi
 __wt_tty=$(tty 2>/dev/null) || return 0
 
 __wt_version="2.0.0"
@@ -47,6 +52,8 @@ __wt_debug='(( __wt_pending )) && { trap - DEBUG; __wt_preexec; }'
 # PS0 is expanded only for non-empty command lines, right before they run; the
 # arithmetic inside the substring offset sets the flag in this shell, no subshell
 __wt_ps0='${PS0:0:$((__wt_pending=1,0))}'
+__wt_today_file=${XDG_CACHE_HOME:-$HOME/.cache}/bash-wakatime/today
+__wt_today_at=0
 __wt_shell=$$
 __wt_pending=0
 __wt_last_key=
@@ -149,6 +156,36 @@ __wt_preexec() {
     __wt_ka_pid=$(__wt_keepalive "$prog" "$__wt_cat" "$PWD" </dev/null >/dev/null 2>&1 & echo $!)
 }
 
+# seconds varname -- 2h05m, 32m or 41s
+__wt_fmt() {
+    if (( $1 >= 3600 )); then
+        printf -v "$2" '%dh%02dm' $(($1 / 3600)) $(($1 % 3600 / 60))
+    elif (( $1 >= 60 )); then
+        printf -v "$2" '%dm' $(($1 / 60))
+    else
+        printf -v "$2" '%ds' "$1"
+    fi
+}
+
+# writes today's total and Bash editor time to __wt_today_file -- detached, and at
+# most one fetch per WAKATIME_BASH_TODAY seconds across every open shell
+__wt_today_refresh() {
+    local dir=${__wt_today_file%/*} cfg=${WAKATIME_HOME:-$HOME}/.wakatime.cfg key url json total bash
+    mkdir -p "$dir" && exec 9>"$dir/lock" && flock -n 9 || return
+    (( EPOCHSECONDS - $(stat -c %Y "$__wt_today_file" 2>/dev/null || echo 0) < WAKATIME_BASH_TODAY )) && return
+    key=$(sed -n 's/^[[:space:]]*api_key[[:space:]]*=[[:space:]]*//p' "$cfg" | tr -d '[:space:]')
+    url=$(sed -n 's/^[[:space:]]*api_url[[:space:]]*=[[:space:]]*//p' "$cfg" | tr -d '[:space:]')
+    [[ -n $key ]] || return
+    # the key goes through curl's stdin config, never argv, where any user could read it in ps
+    json=$(printf 'header = "Authorization: Basic %s"\n' "$(printf %s "$key" | base64 -w0)" |
+           curl -sf -m 10 -K - "${url:-https://api.wakatime.com/api/v1}/users/current/summaries?start=today&end=today") || return
+    read -r total bash < <(jq -r '[.cumulative_total.seconds,
+        ([.data[0].editors[]? | select(.name == "Bash") | .total_seconds] | add // 0)] | map(floor) | @tsv' <<< "$json") || return
+    __wt_fmt "$total" total
+    __wt_fmt "$bash" bash
+    printf '%s\n%s\n' "$total" "$bash" > "$__wt_today_file.$$" && mv -f "$__wt_today_file.$$" "$__wt_today_file"
+}
+
 __wt_precmd() {
     local s=$? pipestatus=("${PIPESTATUS[@]}")
     # prompts that run after this hook (oh-my-posh, bash-preexec aware ones) read the user's pipeline status here
@@ -156,6 +193,14 @@ __wt_precmd() {
     if [[ -n $__wt_ka_pid ]]; then
         kill "$__wt_ka_pid" 2>/dev/null
         __wt_ka_pid=
+    fi
+    if (( WAKATIME_BASH_TODAY > 0 )); then
+        { read -r WAKATIME_TODAY; read -r WAKATIME_TODAY_BASH; } 2>/dev/null < "$__wt_today_file"
+        export WAKATIME_TODAY WAKATIME_TODAY_BASH
+        if (( EPOCHSECONDS - __wt_today_at >= 60 )); then
+            __wt_today_at=$EPOCHSECONDS
+            (__wt_today_refresh </dev/null >/dev/null 2>&1 &)
+        fi
     fi
     # prompt frameworks such as oh-my-posh assign PS0 when they init, dropping the flag
     [[ $PS0 == *__wt_pending* ]] || PS0+=$__wt_ps0
