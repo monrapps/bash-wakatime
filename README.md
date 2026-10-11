@@ -99,34 +99,30 @@ The prompt never waits on the network, and the API key is read from
 `~/.wakatime.cfg` (`api_url` is honored) and passed to curl through stdin,
 never on its command line.
 
-`themes/matrix.omp.json` is an [oh-my-posh](https://ohmyposh.dev) theme that
-shows both values (it needs a Nerd Font). Init oh-my-posh before this script:
+Any prompt can use the variables. Plain bash:
 
 ```bash
-eval "$(oh-my-posh init bash --config path/to/bash-wakatime/themes/matrix.omp.json)"
-WAKATIME_BASH_TODAY=300
-source path/to/bash-wakatime/bash-wakatime.sh
+PS1='${WAKATIME_TODAY:+[$WAKATIME_TODAY] }\w \$ '
 ```
 
-For zsh, use `oh-my-posh init zsh`, `WAKATIME_ZSH_TODAY=300` and
-`source path/to/bash-wakatime/zsh-wakatime.zsh` in `~/.zshrc`. The theme's
-transient prompt only takes effect in zsh (bash needs ble.sh).
-
-`themes/matrix-claude.omp.json` styles the [Claude Code status
-line](https://code.claude.com/docs/en/statusline) the same way: repo and
-worktree, git, context gauge, cost and lines changed, model and effort, and the
-5-hour and 7-day rate limits with their reset times. In `~/.claude/settings.json`:
+Or an [oh-my-posh](https://ohmyposh.dev) `text` segment:
 
 ```json
-"statusLine": {
-  "type": "command",
-  "command": "oh-my-posh claude --config path/to/bash-wakatime/themes/matrix-claude.omp.json",
-  "padding": 0
+{
+  "type": "text",
+  "style": "plain",
+  "template": "{{ if .Env.WAKATIME_TODAY }}{{ .Env.WAKATIME_TODAY }}{{ if .Env.WAKATIME_TODAY_SHELL }} (shell {{ .Env.WAKATIME_TODAY_SHELL }}){{ end }}{{ end }}"
 }
 ```
 
-Any other prompt can use the variables too, e.g.
-`PS1='${WAKATIME_TODAY:+[$WAKATIME_TODAY] }\w \$ '`.
+with the hook sourced after oh-my-posh in the rc (for zsh: `oh-my-posh init
+zsh`, `WAKATIME_ZSH_TODAY=300` and `zsh-wakatime.zsh`):
+
+```bash
+eval "$(oh-my-posh init bash --config path/to/theme.omp.json)"
+WAKATIME_BASH_TODAY=300
+source path/to/bash-wakatime/bash-wakatime.sh
+```
 
 oh-my-posh's built-in `wakatime` segment works as well, but bash has no
 streaming mode, so every cache miss blocks the prompt for the whole API
