@@ -112,6 +112,19 @@ For zsh, use `oh-my-posh init zsh`, `WAKATIME_ZSH_TODAY=300` and
 `source path/to/bash-wakatime/zsh-wakatime.zsh` in `~/.zshrc`. The theme's
 transient prompt only takes effect in zsh (bash needs ble.sh).
 
+`themes/matrix-claude.omp.json` styles the [Claude Code status
+line](https://code.claude.com/docs/en/statusline) the same way: repo and
+worktree, git, context gauge, cost and lines changed, model and effort, and the
+5-hour and 7-day rate limits with their reset times. In `~/.claude/settings.json`:
+
+```json
+"statusLine": {
+  "type": "command",
+  "command": "oh-my-posh claude --config path/to/bash-wakatime/themes/matrix-claude.omp.json",
+  "padding": 0
+}
+```
+
 Any other prompt can use the variables too, e.g.
 `PS1='${WAKATIME_TODAY:+[$WAKATIME_TODAY] }\w \$ '`.
 
