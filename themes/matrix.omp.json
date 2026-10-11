@@ -20,6 +20,13 @@
     "bgwarn": "#3a2a00",
     "bgred": "#3a0d0d"
   },
+  "transient_prompt": {
+    "foreground": "p:green",
+    "foreground_templates": [
+      "{{ if gt .Code 0 }}p:red{{ end }}"
+    ],
+    "template": "❯ "
+  },
   "blocks": [
     {
       "type": "prompt",
@@ -34,11 +41,11 @@
         {
           "type": "os",
           "style": "diamond",
-          "leading_diamond": "",
+          "leading_diamond": "",
           "trailing_diamond": "",
           "background": "p:bg1",
           "foreground": "p:green",
-          "template": " {{ .Icon }}{{ if .WSL }} WSL{{ end }} "
+          "template": " {{ .Icon }}{{ if .WSL }} WSL{{ end }} "
         },
         {
           "type": "root",
@@ -79,7 +86,47 @@
           "options": {
             "branch_icon": " "
           },
-          "template": " {{ .HEAD }}{{ if or .Working.Changed .Staging.Changed }} *{{ end }}{{ if gt .Ahead 0 }} ↑{{ .Ahead }}{{ end }}{{ if gt .Behind 0 }} ↓{{ .Behind }}{{ end }} "
+          "template": " {{ if .UpstreamIcon }}{{ .UpstreamIcon }} {{ end }}{{ .HEAD }}{{ if gt .Ahead 0 }} ↑{{ .Ahead }}{{ end }}{{ if gt .Behind 0 }} ↓{{ .Behind }}{{ end }}{{ if .Staging.Changed }}  {{ .Staging.String }}{{ end }}{{ if and .Staging.Changed .Working.Changed }} |{{ end }}{{ if .Working.Changed }}  {{ .Working.String }}{{ end }}{{ if gt .StashCount 0 }}  {{ .StashCount }}{{ end }} "
+        },
+        {
+          "type": "node",
+          "style": "diamond",
+          "leading_diamond": "",
+          "trailing_diamond": "",
+          "background": "p:bg2",
+          "foreground": "p:soft",
+          "template": "  {{ .Full }} "
+        },
+        {
+          "type": "python",
+          "style": "diamond",
+          "leading_diamond": "",
+          "trailing_diamond": "",
+          "background": "p:bg2",
+          "foreground": "p:soft",
+          "template": "  {{ if .Venv }}{{ .Venv }} {{ end }}{{ .Full }} ",
+          "options": {
+            "cache_duration": "1h",
+            "display_mode": "context"
+          }
+        },
+        {
+          "type": "go",
+          "style": "diamond",
+          "leading_diamond": "",
+          "trailing_diamond": "",
+          "background": "p:bg2",
+          "foreground": "p:soft",
+          "template": "  {{ .Full }} "
+        },
+        {
+          "type": "cmake",
+          "style": "diamond",
+          "leading_diamond": "",
+          "trailing_diamond": "",
+          "background": "p:bg2",
+          "foreground": "p:soft",
+          "template": "  {{ .Full }} "
         }
       ]
     },
@@ -108,6 +155,15 @@
           "style": "plain",
           "foreground": "p:green",
           "template": "{{ if .Env.WAKATIME_TODAY }} {{ .Env.WAKATIME_TODAY }}{{ if .Env.WAKATIME_TODAY_SHELL }} <p:muted> {{ .Env.WAKATIME_TODAY_SHELL }}</>{{ end }}{{ end }}"
+        },
+        {
+          "type": "time",
+          "style": "plain",
+          "foreground": "p:muted",
+          "options": {
+            "time_format": "15:04:05"
+          },
+          "template": " {{ .CurrentDate | date .Format }}"
         }
       ]
     },

@@ -109,7 +109,8 @@ source path/to/bash-wakatime/bash-wakatime.sh
 ```
 
 For zsh, use `oh-my-posh init zsh`, `WAKATIME_ZSH_TODAY=300` and
-`source path/to/bash-wakatime/zsh-wakatime.zsh` in `~/.zshrc`.
+`source path/to/bash-wakatime/zsh-wakatime.zsh` in `~/.zshrc`. The theme's
+transient prompt only takes effect in zsh (bash needs ble.sh).
 
 Any other prompt can use the variables too, e.g.
 `PS1='${WAKATIME_TODAY:+[$WAKATIME_TODAY] }\w \$ '`.
