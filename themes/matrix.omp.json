@@ -35,7 +35,7 @@
           "type": "os",
           "style": "diamond",
           "leading_diamond": "",
-          "trailing_diamond": " ",
+          "trailing_diamond": "",
           "background": "p:bg1",
           "foreground": "p:green",
           "template": " {{ .Icon }}{{ if .WSL }} WSL{{ end }} "
@@ -43,8 +43,8 @@
         {
           "type": "root",
           "style": "diamond",
-          "leading_diamond": "",
-          "trailing_diamond": " ",
+          "leading_diamond": "",
+          "trailing_diamond": "",
           "background": "p:bgred",
           "foreground": "p:red",
           "template": "  "
@@ -52,8 +52,8 @@
         {
           "type": "path",
           "style": "diamond",
-          "leading_diamond": "",
-          "trailing_diamond": " ",
+          "leading_diamond": "",
+          "trailing_diamond": "",
           "background": "p:bg2",
           "foreground": "p:green",
           "options": {
@@ -66,8 +66,8 @@
         {
           "type": "git",
           "style": "diamond",
-          "leading_diamond": "",
-          "trailing_diamond": " ",
+          "leading_diamond": "",
+          "trailing_diamond": "",
           "background": "p:bg3",
           "background_templates": [
             "{{ if or .Working.Changed .Staging.Changed }}p:bgwarn{{ end }}"
