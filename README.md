@@ -1,7 +1,7 @@
-BASH plugin for wakatime
-=======================
+BASH and ZSH plugin for wakatime
+================================
 
-Automatic time tracking for commands in BASH using [wakatime](http://wakatime.com/).
+Automatic time tracking for commands in BASH and ZSH using [wakatime](http://wakatime.com/).
 
 Installation
 ------------
@@ -23,6 +23,10 @@ Make sure you have configured wakatime API key in your [~/.wakatime.cfg](https:/
 
   - It must be sourced: running the file as a program only hooks a child shell
     that exits right away, so the script refuses to run that way.
+
+   For zsh users (macOS default shell included), add this to "~/.zshrc" instead:
+
+    `source path/to/zsh-wakatime.zsh`
 
 3. Open a new terminal and type commands
 
@@ -50,6 +54,21 @@ How it works
   catches its first simple command (preexec), and `PROMPT_COMMAND` stops the
   keepalive and re-arms the trap (precmd). It refuses to install over a
   `DEBUG` trap set by another tool, such as bash-preexec.
+
+zsh
+---
+
+`zsh-wakatime.zsh` behaves the same on zsh's native `preexec`/`precmd` hooks
+and avoids Linux-only tools, so it also runs on macOS: `zstat` for the tty
+atime and cache mtime, `zsystem flock` for the lock, `ps` for the foreground
+process (an interpreter such as `node` is billed as the script it runs, since
+npm CLIs like `claude` are node scripts). Aliases are expanded before the
+entity is picked. It loads only the `zstat` builtin, never the full
+`zsh/stat` module, whose `stat` builtin would shadow the system command.
+
+Its variables mirror the bash ones with a `ZSH` infix: `WAKATIME_ZSH_INTERVAL`,
+`WAKATIME_ZSH_IDLE`, `WAKATIME_ZSH_IGNORE` and `WAKATIME_ZSH_TODAY` (which
+needs `curl` and `jq`). `WAKATIME_CLI` is shared.
 
 Configuration
 -------------
@@ -89,6 +108,9 @@ WAKATIME_BASH_TODAY=300
 source path/to/bash-wakatime/bash-wakatime.sh
 ```
 
+For zsh, use `oh-my-posh init zsh`, `WAKATIME_ZSH_TODAY=300` and
+`source path/to/bash-wakatime/zsh-wakatime.zsh` in `~/.zshrc`.
+
 Any other prompt can use the variables too, e.g.
 `PS1='${WAKATIME_TODAY:+[$WAKATIME_TODAY] }\w \$ '`.
 
@@ -96,7 +118,8 @@ oh-my-posh's built-in `wakatime` segment works as well, but bash has no
 streaming mode, so every cache miss blocks the prompt for the whole API
 round trip (about a second).
 
-Compatibility with prompt frameworks: the hook re-appends its `PS0` flag on
+Compatibility with prompt frameworks (bash only; zsh already restores `$?` and
+`pipestatus` for every precmd hook): the hook re-appends its `PS0` flag on
 every prompt (oh-my-posh assigns `PS0` when it initializes), and saves the
 user's `PIPESTATUS` in `BP_PIPESTATUS`, which oh-my-posh reads, so its status
 segment still sees the real pipeline status even though this hook runs first.
