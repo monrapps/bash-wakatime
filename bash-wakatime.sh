@@ -167,7 +167,7 @@ __wt_fmt() {
     fi
 }
 
-# writes today's total and Bash editor time to __wt_today_file -- detached, and at
+# writes today's total and shell (Bash + Zsh editors) time to __wt_today_file -- detached, and at
 # most one fetch per WAKATIME_BASH_TODAY seconds across every open shell
 __wt_today_refresh() {
     local dir=${__wt_today_file%/*} cfg=${WAKATIME_HOME:-$HOME}/.wakatime.cfg key url json total bash
@@ -180,7 +180,7 @@ __wt_today_refresh() {
     json=$(printf 'header = "Authorization: Basic %s"\n' "$(printf %s "$key" | base64 -w0)" |
            curl -sf -m 10 -K - "${url:-https://api.wakatime.com/api/v1}/users/current/summaries?start=today&end=today") || return
     read -r total bash < <(jq -r '[.cumulative_total.seconds,
-        ([.data[0].editors[]? | select(.name == "Bash") | .total_seconds] | add // 0)] | map(floor) | @tsv' <<< "$json") || return
+        ([.data[0].editors[]? | select(.name | test("^(bash|zsh)$"; "i")) | .total_seconds] | add // 0)] | map(floor) | @tsv' <<< "$json") || return
     __wt_fmt "$total" total
     __wt_fmt "$bash" bash
     printf '%s\n%s\n' "$total" "$bash" > "$__wt_today_file.$$" && mv -f "$__wt_today_file.$$" "$__wt_today_file"
@@ -195,8 +195,8 @@ __wt_precmd() {
         __wt_ka_pid=
     fi
     if (( WAKATIME_BASH_TODAY > 0 )); then
-        { read -r WAKATIME_TODAY; read -r WAKATIME_TODAY_BASH; } 2>/dev/null < "$__wt_today_file"
-        export WAKATIME_TODAY WAKATIME_TODAY_BASH
+        { read -r WAKATIME_TODAY; read -r WAKATIME_TODAY_SHELL; } 2>/dev/null < "$__wt_today_file"
+        export WAKATIME_TODAY WAKATIME_TODAY_SHELL
         if (( EPOCHSECONDS - __wt_today_at >= 60 )); then
             __wt_today_at=$EPOCHSECONDS
             (__wt_today_refresh </dev/null >/dev/null 2>&1 &)

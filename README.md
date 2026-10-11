@@ -73,7 +73,8 @@ interval across all open shells (`flock` plus the cache file mtime), and each
 prompt reads the cache with no fork and exports:
 
 - `WAKATIME_TODAY`: today's total across every editor, e.g. `2h05m`
-- `WAKATIME_TODAY_BASH`: the part of it tracked by this plugin, e.g. `41m`
+- `WAKATIME_TODAY_SHELL`: the part of it tracked by the shell plugins (the
+  `Bash` and `Zsh` editors), e.g. `41m`
 
 The prompt never waits on the network, and the API key is read from
 `~/.wakatime.cfg` (`api_url` is honored) and passed to curl through stdin,

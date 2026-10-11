@@ -75,7 +75,7 @@
           "type": "text",
           "style": "plain",
           "foreground": "p:green",
-          "template": "{{ if .Env.WAKATIME_TODAY }} {{ .Env.WAKATIME_TODAY }}{{ if .Env.WAKATIME_TODAY_BASH }} <p:muted> {{ .Env.WAKATIME_TODAY_BASH }}</>{{ end }}{{ end }}"
+          "template": "{{ if .Env.WAKATIME_TODAY }} {{ .Env.WAKATIME_TODAY }}{{ if .Env.WAKATIME_TODAY_SHELL }} <p:muted> {{ .Env.WAKATIME_TODAY_SHELL }}</>{{ end }}{{ end }}"
         }
       ]
     },
