@@ -13,7 +13,12 @@
     "soft": "#b0ffb0",
     "muted": "#4a7a4a",
     "red": "#ff3333",
-    "warn": "#ffaa00"
+    "warn": "#ffaa00",
+    "bg1": "#0d260d",
+    "bg2": "#123612",
+    "bg3": "#1a4a1a",
+    "bgwarn": "#3a2a00",
+    "bgred": "#3a0d0d"
   },
   "blocks": [
     {
@@ -27,19 +32,46 @@
           "template": "{{ if .SSHSession }}{{ .UserName }}@{{ .HostName }} {{ end }}"
         },
         {
+          "type": "os",
+          "style": "diamond",
+          "leading_diamond": "",
+          "trailing_diamond": " ",
+          "background": "p:bg1",
+          "foreground": "p:green",
+          "template": " {{ .Icon }}{{ if .WSL }} WSL{{ end }} "
+        },
+        {
+          "type": "root",
+          "style": "diamond",
+          "leading_diamond": "",
+          "trailing_diamond": " ",
+          "background": "p:bgred",
+          "foreground": "p:red",
+          "template": "  "
+        },
+        {
           "type": "path",
-          "style": "plain",
+          "style": "diamond",
+          "leading_diamond": "",
+          "trailing_diamond": " ",
+          "background": "p:bg2",
           "foreground": "p:green",
           "options": {
             "style": "agnoster_short",
             "max_depth": 4,
             "home_icon": "~"
           },
-          "template": "{{ .Path }}"
+          "template": " {{ .Path }} "
         },
         {
           "type": "git",
-          "style": "plain",
+          "style": "diamond",
+          "leading_diamond": "",
+          "trailing_diamond": " ",
+          "background": "p:bg3",
+          "background_templates": [
+            "{{ if or .Working.Changed .Staging.Changed }}p:bgwarn{{ end }}"
+          ],
           "foreground": "p:mid",
           "foreground_templates": [
             "{{ if or .Working.Changed .Staging.Changed }}p:warn{{ end }}"
@@ -47,7 +79,7 @@
           "options": {
             "branch_icon": " "
           },
-          "template": " {{ .HEAD }}{{ if or .Working.Changed .Staging.Changed }} *{{ end }}{{ if gt .Ahead 0 }} ↑{{ .Ahead }}{{ end }}{{ if gt .Behind 0 }} ↓{{ .Behind }}{{ end }}"
+          "template": " {{ .HEAD }}{{ if or .Working.Changed .Staging.Changed }} *{{ end }}{{ if gt .Ahead 0 }} ↑{{ .Ahead }}{{ end }}{{ if gt .Behind 0 }} ↓{{ .Behind }}{{ end }} "
         }
       ]
     },
