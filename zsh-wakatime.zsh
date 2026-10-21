@@ -29,8 +29,8 @@ if [[ ! -x $WAKATIME_CLI ]]; then
     print -u2 "zsh-wakatime: wakatime-cli not found at $WAKATIME_CLI"
     return 1
 fi
-if (( WAKATIME_ZSH_TODAY > 0 )) && ! (( $+commands[curl] && $+commands[jq] )); then
-    print -u2 "zsh-wakatime: WAKATIME_ZSH_TODAY needs curl and jq, disabling it"
+if (( WAKATIME_ZSH_TODAY > 0 )) && ! (( $+commands[jq] )); then
+    print -u2 "zsh-wakatime: WAKATIME_ZSH_TODAY needs jq, disabling it"
     WAKATIME_ZSH_TODAY=0
 fi
 [[ -n $TTY ]] || return 0
@@ -160,19 +160,17 @@ __wt_fmt() {
 # writes today's total and shell (Bash + Zsh editors) time to __wt_today_file -- detached,
 # and at most one fetch per WAKATIME_ZSH_TODAY seconds across every open shell
 __wt_today_refresh() {
-    local dir=${__wt_today_file:h} cfg=${WAKATIME_HOME:-$HOME}/.wakatime.cfg key url json total shell lfd
+    local dir=${__wt_today_file:h} json total shell lfd
     local -a mt
     mkdir -p $dir && : >> $dir/lock && zsystem flock -t 0 -f lfd $dir/lock || return
     zstat -A mt +mtime -- $__wt_today_file 2>/dev/null || mt=(0)
     (( EPOCHSECONDS - mt[1] < WAKATIME_ZSH_TODAY )) && return
-    key=$(sed -n 's/^[[:space:]]*api_key[[:space:]]*=[[:space:]]*//p' $cfg | tr -d '[:space:]')
-    url=$(sed -n 's/^[[:space:]]*api_url[[:space:]]*=[[:space:]]*//p' $cfg | tr -d '[:space:]')
-    [[ -n $key ]] || return
-    # the key goes through curl's stdin config, never argv, where any user could read it in ps
-    json=$(print -r -- "header = \"Authorization: Basic $(print -rn -- $key | base64 | tr -d '\n')\"" |
-           curl -sf -m 10 -K - "${url:-https://api.wakatime.com/api/v1}/users/current/summaries?start=today&end=today") || return
-    read -r total shell < <(jq -r '[.cumulative_total.seconds,
-        ([.data[0].editors[]? | select(.name | test("^(bash|zsh)$"; "i")) | .total_seconds] | add // 0)] | map(floor) | @tsv' <<< $json) || return
+    # through wakatime-cli, which reads the key, api_url and proxy from ~/.wakatime.cfg: since
+    # November 2026 WakaTime takes API keys only from plugins, not from direct API calls
+    json=$($WAKATIME_CLI --today --output raw-json --timeout 10 \
+        --plugin "zsh/$ZSH_VERSION zsh-wakatime/$__wt_version" </dev/null 2>/dev/null) || return
+    read -r total shell < <(jq -r '[.data.grand_total.total_seconds,
+        ([.data.editors[]? | select(.name | test("^(bash|zsh)$"; "i")) | .total_seconds] | add // 0)] | map(floor) | @tsv' <<< $json) || return
     { __wt_fmt $total; print; __wt_fmt $shell; print } > $__wt_today_file.$$ && mv -f $__wt_today_file.$$ $__wt_today_file
 }
 

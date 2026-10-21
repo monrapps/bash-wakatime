@@ -68,7 +68,7 @@ entity is picked. It loads only the `zstat` builtin, never the full
 
 Its variables mirror the bash ones with a `ZSH` infix: `WAKATIME_ZSH_INTERVAL`,
 `WAKATIME_ZSH_IDLE`, `WAKATIME_ZSH_IGNORE` and `WAKATIME_ZSH_TODAY` (which
-needs `curl` and `jq`). `WAKATIME_CLI` is shared.
+needs `jq`). `WAKATIME_CLI` is shared.
 
 Configuration
 -------------
@@ -81,23 +81,27 @@ Set these before sourcing the script:
 | `WAKATIME_BASH_INTERVAL` | `120` | seconds between heartbeats of a running command |
 | `WAKATIME_BASH_IDLE` | `900` | stop billing a running command after this long without keyboard input |
 | `WAKATIME_BASH_IGNORE` | `claude codex` | space-separated programs that already have their own WakaTime plugin, [Claude Code](https://wakatime.com/claude-code) and [Codex CLI](https://wakatime.com/codex) by default (add `vim` if you use vim-wakatime) |
-| `WAKATIME_BASH_TODAY` | `0` | refresh today's totals for the prompt every this many seconds, `0` disables (needs `curl`, `jq` and `flock`) |
+| `WAKATIME_BASH_TODAY` | `0` | refresh today's totals for the prompt every this many seconds, `0` disables (needs `jq` and `flock`) |
 
 Today's time in the prompt
 --------------------------
 
-With `WAKATIME_BASH_TODAY` set, a detached job fetches today's
-[summaries](https://wakatime.com/developers#summaries) at most once per
-interval across all open shells (`flock` plus the cache file mtime), and each
-prompt reads the cache with no fork and exports:
+With `WAKATIME_BASH_TODAY` set, a detached job asks `wakatime-cli --today`
+for today's dashboard time at most once per interval across all open shells
+(`flock` plus the cache file mtime), and each prompt reads the cache with no
+fork and exports:
 
 - `WAKATIME_TODAY`: today's total across every editor, e.g. `2h05m`
 - `WAKATIME_TODAY_SHELL`: the part of it tracked by the shell plugins (the
   `Bash` and `Zsh` editors), e.g. `41m`
 
-The prompt never waits on the network, and the API key is read from
-`~/.wakatime.cfg` (`api_url` is honored) and passed to curl through stdin,
-never on its command line.
+These are the status bar numbers editor plugins show. When WakaTime has none
+for the day, both read `0s`.
+
+The prompt never waits on the network. The query goes through wakatime-cli,
+which reads the API key, `api_url` and proxy from `~/.wakatime.cfg`: since
+November 1, 2026 WakaTime accepts API keys only from plugins, so a direct call
+to the API with the key stops working.
 
 Any prompt can use the variables. Plain bash:
 

@@ -39,8 +39,8 @@ if [[ -n $__wt_trap && $__wt_trap != *__wt_preexec* ]]; then
     echo "bash-wakatime: a DEBUG trap is already set ($__wt_trap), not installing" >&2
     return 1
 fi
-if (( WAKATIME_BASH_TODAY > 0 )) && ! type -P curl jq flock >/dev/null; then
-    echo "bash-wakatime: WAKATIME_BASH_TODAY needs curl, jq and flock, disabling it" >&2
+if (( WAKATIME_BASH_TODAY > 0 )) && ! type -P jq flock >/dev/null; then
+    echo "bash-wakatime: WAKATIME_BASH_TODAY needs jq and flock, disabling it" >&2
     WAKATIME_BASH_TODAY=0
 fi
 __wt_tty=$(tty 2>/dev/null) || return 0
@@ -170,17 +170,15 @@ __wt_fmt() {
 # writes today's total and shell (Bash + Zsh editors) time to __wt_today_file -- detached, and at
 # most one fetch per WAKATIME_BASH_TODAY seconds across every open shell
 __wt_today_refresh() {
-    local dir=${__wt_today_file%/*} cfg=${WAKATIME_HOME:-$HOME}/.wakatime.cfg key url json total bash
+    local dir=${__wt_today_file%/*} json total bash
     mkdir -p "$dir" && exec 9>"$dir/lock" && flock -n 9 || return
     (( EPOCHSECONDS - $(stat -c %Y "$__wt_today_file" 2>/dev/null || echo 0) < WAKATIME_BASH_TODAY )) && return
-    key=$(sed -n 's/^[[:space:]]*api_key[[:space:]]*=[[:space:]]*//p' "$cfg" | tr -d '[:space:]')
-    url=$(sed -n 's/^[[:space:]]*api_url[[:space:]]*=[[:space:]]*//p' "$cfg" | tr -d '[:space:]')
-    [[ -n $key ]] || return
-    # the key goes through curl's stdin config, never argv, where any user could read it in ps
-    json=$(printf 'header = "Authorization: Basic %s"\n' "$(printf %s "$key" | base64 -w0)" |
-           curl -sf -m 10 -K - "${url:-https://api.wakatime.com/api/v1}/users/current/summaries?start=today&end=today") || return
-    read -r total bash < <(jq -r '[.cumulative_total.seconds,
-        ([.data[0].editors[]? | select(.name | test("^(bash|zsh)$"; "i")) | .total_seconds] | add // 0)] | map(floor) | @tsv' <<< "$json") || return
+    # through wakatime-cli, which reads the key, api_url and proxy from ~/.wakatime.cfg: since
+    # November 2026 WakaTime takes API keys only from plugins, not from direct API calls
+    json=$("$WAKATIME_CLI" --today --output raw-json --timeout 10 \
+        --plugin "bash/${BASH_VERSION%%(*} bash-wakatime/$__wt_version" </dev/null 2>/dev/null) || return
+    read -r total bash < <(jq -r '[.data.grand_total.total_seconds,
+        ([.data.editors[]? | select(.name | test("^(bash|zsh)$"; "i")) | .total_seconds] | add // 0)] | map(floor) | @tsv' <<< "$json") || return
     __wt_fmt "$total" total
     __wt_fmt "$bash" bash
     printf '%s\n%s\n' "$total" "$bash" > "$__wt_today_file.$$" && mv -f "$__wt_today_file.$$" "$__wt_today_file"
