@@ -64,6 +64,16 @@ __wt_ignored() {
     [[ " $WAKATIME_BASH_IGNORE " == *" $1 "* ]]
 }
 
+# for jobs started from the DEBUG trap: when a command line starts with a pipeline, its pipe is
+# already open in this shell, and a job holding the write end leaves the reader waiting for an EOF
+__wt_close_fds() {
+    local fd
+    for fd in /proc/self/fd/*; do
+        fd=${fd##*/}
+        if (( fd > 2 && fd != 255 )); then exec {fd}>&-; fi
+    done
+}
+
 # sets __wt_cat from a program name and its first argument
 __wt_category() {
     case $1 in
@@ -151,9 +161,9 @@ __wt_preexec() {
     if [[ "$prog|$__wt_cat|$PWD" != "$__wt_last_key" ]] || (( EPOCHSECONDS - __wt_last_sent >= WAKATIME_BASH_INTERVAL )); then
         __wt_last_key="$prog|$__wt_cat|$PWD"
         __wt_last_sent=$EPOCHSECONDS
-        (__wt_send "$prog" "$__wt_cat" "$PWD" </dev/null >/dev/null 2>&1 &)
+        (__wt_close_fds; __wt_send "$prog" "$__wt_cat" "$PWD" </dev/null >/dev/null 2>&1 &)
     fi
-    __wt_ka_pid=$(__wt_keepalive "$prog" "$__wt_cat" "$PWD" </dev/null >/dev/null 2>&1 & echo $!)
+    __wt_ka_pid=$(__wt_close_fds; __wt_keepalive "$prog" "$__wt_cat" "$PWD" </dev/null >/dev/null 2>&1 & echo $!)
 }
 
 # seconds varname -- 2h05m, 32m or 41s
